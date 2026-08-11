@@ -285,22 +285,7 @@ function MeuDia() {
         )}
       </section>
 
-      {tomorrow.length > 0 && (
-        <section className="mt-10">
-          <p className="label-caps flex items-center gap-2">
-            <CalendarDays className="h-3.5 w-3.5" /> Amanhã
-          </p>
-          <ul className="mt-3 space-y-1.5">
-            {tomorrow.map((a) => (
-              <li key={a.id} className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span className="tabular-nums">{hhmm(a.start_time)}</span>
-                <span className="text-foreground">{a.title}</span>
-                <span className="text-xs">{a.planned_minutes} min</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <AgendaProximosDias today={today} />
     </div>
   );
 }
