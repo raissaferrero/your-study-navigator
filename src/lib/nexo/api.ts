@@ -107,7 +107,7 @@ export async function generatePlan(opts: { days?: number; reason: string; note?:
   const targets = rankTargets({
     subjects: ctx.subjects,
     topics: ctx.topics,
-    exams: ctx.exams,
+    exams: ctx.exams.map((e) => ({ ...e, priority: e.priority as Priority })),
     selfLevels: selfLevelsOf(ctx.profile),
     now,
   });
