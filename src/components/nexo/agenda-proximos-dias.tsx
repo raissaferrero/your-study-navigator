@@ -64,8 +64,9 @@ export function AgendaProximosDias({ today }: { today: string }) {
             mode="single"
             selected={selected}
             onSelect={(d) => d && setSelected(d)}
-            fromDate={parseISO(today)}
-            toDate={parseISO(rangeEnd)}
+            startMonth={parseISO(today)}
+            endMonth={parseISO(rangeEnd)}
+            disabled={{ before: parseISO(today), after: parseISO(rangeEnd) }}
             modifiers={{ planned: plannedDays }}
             modifiersClassNames={{
               planned: "font-semibold text-primary underline underline-offset-4 decoration-primary/50",
