@@ -9,11 +9,9 @@ import {
   RefreshCw,
   Clock,
   Info,
-  CalendarDays,
   ChevronDown,
 } from "lucide-react";
 import {
-  addDays,
   completeActivity,
   getActivities,
   getPlanningContext,
@@ -37,6 +35,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { AgendaProximosDias } from "@/components/nexo/agenda-proximos-dias";
 
 export const Route = createFileRoute("/_authenticated/meu-dia")({
   head: () => ({
@@ -76,10 +75,6 @@ function MeuDia() {
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ["activities", today],
     queryFn: () => getActivities(today, today),
-  });
-  const { data: tomorrow = [] } = useQuery({
-    queryKey: ["activities", addDays(today, 1)],
-    queryFn: () => getActivities(addDays(today, 1), addDays(today, 1)),
   });
   const { data: ctx } = useQuery({ queryKey: ["planning-context"], queryFn: getPlanningContext });
 
