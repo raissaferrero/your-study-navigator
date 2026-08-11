@@ -9,11 +9,9 @@ import {
   RefreshCw,
   Clock,
   Info,
-  CalendarDays,
   ChevronDown,
 } from "lucide-react";
 import {
-  addDays,
   completeActivity,
   getActivities,
   getPlanningContext,
@@ -37,6 +35,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { AgendaProximosDias } from "@/components/nexo/agenda-proximos-dias";
 
 export const Route = createFileRoute("/_authenticated/meu-dia")({
   head: () => ({
@@ -76,10 +75,6 @@ function MeuDia() {
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ["activities", today],
     queryFn: () => getActivities(today, today),
-  });
-  const { data: tomorrow = [] } = useQuery({
-    queryKey: ["activities", addDays(today, 1)],
-    queryFn: () => getActivities(addDays(today, 1), addDays(today, 1)),
   });
   const { data: ctx } = useQuery({ queryKey: ["planning-context"], queryFn: getPlanningContext });
 
@@ -285,22 +280,7 @@ function MeuDia() {
         )}
       </section>
 
-      {tomorrow.length > 0 && (
-        <section className="mt-10">
-          <p className="label-caps flex items-center gap-2">
-            <CalendarDays className="h-3.5 w-3.5" /> Amanhã
-          </p>
-          <ul className="mt-3 space-y-1.5">
-            {tomorrow.map((a) => (
-              <li key={a.id} className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span className="tabular-nums">{hhmm(a.start_time)}</span>
-                <span className="text-foreground">{a.title}</span>
-                <span className="text-xs">{a.planned_minutes} min</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <AgendaProximosDias today={today} />
     </div>
   );
 }
