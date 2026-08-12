@@ -4,9 +4,12 @@ import {
   availableMinutes,
   buildDayPlan,
   rankTargets,
+  nextReviewInterval,
+  adjustMastery,
   type ActivityDraft,
   type ActivityType,
   type Priority,
+  type ReviewQuality,
 } from "./engine";
 
 export type Activity = Tables<"study_activities">;
@@ -296,3 +299,140 @@ export async function skipActivity(id: string) {
 }
 
 export const PRIORITY_ORDER: Priority[] = ["alta", "media", "baixa"];
+
+// ============ Configurações ============
+
+export type ProfileSettings = {
+  name: string;
+  goal: string;
+  goal_detail: string | null;
+  autonomy: string;
+  preferences: string[];
+  self_assessment: Record<string, unknown>;
+};
+
+export async function updateProfileSettings(input: Partial<ProfileSettings>) {
+  const uid = await userId();
+  const { error } = await supabase.from("profiles").update(input).eq("id", uid);
+  if (error) throw error;
+}
+
+export async function saveAvailability(hoursByWeekday: number[]) {
+  const uid = await userId();
+  const { error: delError } = await supabase.from("availability").delete().eq("user_id", uid);
+  if (delError) throw delError;
+  const { error } = await supabase
+    .from("availability")
+    .insert(hoursByWeekday.map((hours, weekday) => ({ user_id: uid, weekday, hours })));
+  if (error) throw error;
+}
+
+export type ExamInputData = {
+  name: string;
+  institution: string | null;
+  exam_date: string | null;
+  specialty: string | null;
+  priority: string;
+};
+
+export async function addExam(input: ExamInputData) {
+  const uid = await userId();
+  const { error } = await supabase.from("target_exams").insert({ ...input, user_id: uid });
+  if (error) throw error;
+}
+
+export async function updateExam(id: string, input: Partial<ExamInputData>) {
+  const { error } = await supabase.from("target_exams").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteExam(id: string) {
+  const { error } = await supabase.from("target_exams").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function addException(input: {
+  date: string;
+  start_time: string | null;
+  end_time: string | null;
+  description: string | null;
+}) {
+  const uid = await userId();
+  const { error } = await supabase.from("availability_exceptions").insert({ ...input, user_id: uid });
+  if (error) throw error;
+}
+
+export async function deleteException(id: string) {
+  const { error } = await supabase.from("availability_exceptions").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ============ Revisões ============
+
+export type ReviewItem = {
+  topic: Topic;
+  subjectName: string | null;
+  dueDate: string | null;
+  overdueDays: number | null;
+};
+
+function intervalDays(topic: Topic): number | null {
+  if (!topic.last_studied_at || !topic.next_review_at) return null;
+  const diff =
+    (new Date(topic.next_review_at).getTime() - new Date(topic.last_studied_at).getTime()) / 86400000;
+  return diff > 0 ? Math.round(diff) : null;
+}
+
+export async function getReviewQueue(): Promise<{ due: ReviewItem[]; upcoming: ReviewItem[]; untouched: ReviewItem[] }> {
+  const uid = await userId();
+  const [topicsRes, subjectsRes] = await Promise.all([
+    supabase.from("topics").select("*").eq("user_id", uid).order("next_review_at", { nullsFirst: false }),
+    supabase.from("subjects").select("*").eq("user_id", uid),
+  ]);
+  if (topicsRes.error) throw topicsRes.error;
+  const subjects = new Map((subjectsRes.data ?? []).map((s) => [s.id, s.name]));
+  const now = Date.now();
+
+  const due: ReviewItem[] = [];
+  const upcoming: ReviewItem[] = [];
+  const untouched: ReviewItem[] = [];
+
+  for (const topic of topicsRes.data ?? []) {
+    const item: ReviewItem = {
+      topic,
+      subjectName: topic.subject_id ? (subjects.get(topic.subject_id) ?? null) : null,
+      dueDate: topic.next_review_at,
+      overdueDays: topic.next_review_at
+        ? Math.floor((now - new Date(topic.next_review_at).getTime()) / 86400000)
+        : null,
+    };
+    if (!topic.next_review_at) {
+      if (topic.last_studied_at) due.push(item);
+      else untouched.push(item);
+    } else if (new Date(topic.next_review_at).getTime() <= now) {
+      due.push(item);
+    } else {
+      upcoming.push(item);
+    }
+  }
+
+  due.sort((a, b) => (b.overdueDays ?? 0) - (a.overdueDays ?? 0));
+  upcoming.sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
+  return { due, upcoming, untouched };
+}
+
+export async function registerReview(topic: Topic, quality: ReviewQuality) {
+  const days = nextReviewInterval(intervalDays(topic), quality);
+  const now = new Date();
+  const next = new Date(now.getTime() + days * 86400000);
+  const { error } = await supabase
+    .from("topics")
+    .update({
+      last_studied_at: now.toISOString(),
+      next_review_at: next.toISOString(),
+      mastery: adjustMastery(topic.mastery, quality),
+    })
+    .eq("id", topic.id);
+  if (error) throw error;
+  return { days, next: isoDate(next) };
+}
