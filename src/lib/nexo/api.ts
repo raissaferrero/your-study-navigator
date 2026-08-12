@@ -308,12 +308,15 @@ export type ProfileSettings = {
   goal_detail: string | null;
   autonomy: string;
   preferences: string[];
-  self_assessment: Record<string, unknown>;
+  self_assessment: { areas?: Record<string, string>; geral?: string | null };
 };
 
 export async function updateProfileSettings(input: Partial<ProfileSettings>) {
   const uid = await userId();
-  const { error } = await supabase.from("profiles").update(input).eq("id", uid);
+  const { error } = await supabase
+    .from("profiles")
+    .update(input as Record<string, never>)
+    .eq("id", uid);
   if (error) throw error;
 }
 
