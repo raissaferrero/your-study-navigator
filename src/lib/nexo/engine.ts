@@ -300,3 +300,31 @@ export const PRIORITY_LABEL: Record<Priority, string> = {
   media: "Média",
   baixa: "Baixa",
 };
+
+// ---------- revisão espaçada ----------
+export type ReviewQuality = "dificil" | "medio" | "facil";
+
+export const REVIEW_QUALITY_LABEL: Record<ReviewQuality, string> = {
+  dificil: "Difícil",
+  medio: "Razoável",
+  facil: "Fácil",
+};
+
+const FIRST_INTERVAL: Record<ReviewQuality, number> = { dificil: 1, medio: 3, facil: 7 };
+const FACTOR: Record<ReviewQuality, number> = { dificil: 0.5, medio: 1.8, facil: 2.6 };
+
+/** Próximo intervalo de revisão, em dias, a partir do intervalo anterior. */
+export function nextReviewInterval(
+  previousIntervalDays: number | null,
+  quality: ReviewQuality,
+): number {
+  if (!previousIntervalDays || previousIntervalDays < 1) return FIRST_INTERVAL[quality];
+  return Math.max(1, Math.min(180, Math.round(previousIntervalDays * FACTOR[quality])));
+}
+
+/** Ajuste de domínio percebido após uma revisão (0–100). */
+export function adjustMastery(current: number | null, quality: ReviewQuality): number {
+  const base = current ?? 50;
+  const delta = quality === "facil" ? 10 : quality === "medio" ? 4 : -8;
+  return Math.max(0, Math.min(100, Math.round(base + delta)));
+}
