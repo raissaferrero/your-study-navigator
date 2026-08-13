@@ -439,3 +439,40 @@ export async function registerReview(topic: Topic, quality: ReviewQuality) {
   if (error) throw error;
   return { days, next: isoDate(next) };
 }
+
+// ============ Conteúdos ============
+
+export async function addSubject(input: { name: string; area: string }) {
+  const uid = await userId();
+  const { error } = await supabase.from("subjects").insert({ ...input, user_id: uid });
+  if (error) throw error;
+}
+
+export async function updateSubject(id: string, input: { name?: string; area?: string }) {
+  const { error } = await supabase.from("subjects").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteSubject(id: string) {
+  const { error } = await supabase.from("subjects").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function addTopic(input: { name: string; subject_id: string; difficulty: number }) {
+  const uid = await userId();
+  const { error } = await supabase.from("topics").insert({ ...input, user_id: uid });
+  if (error) throw error;
+}
+
+export async function updateTopic(
+  id: string,
+  input: { name?: string; difficulty?: number; mastery?: number | null },
+) {
+  const { error } = await supabase.from("topics").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteTopic(id: string) {
+  const { error } = await supabase.from("topics").delete().eq("id", id);
+  if (error) throw error;
+}
