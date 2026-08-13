@@ -88,7 +88,7 @@ function Configuracoes() {
     setName(ctx.profile?.name ?? "");
     setGoalDetail(ctx.profile?.goal_detail ?? "");
     setAutonomy(ctx.profile?.autonomy ?? "automatico");
-    setPrefs(((ctx.profile?.preferences ?? []) as string[]) ?? []);
+    setPrefs((ctx.profile?.preferences ?? []) as string[]);
     const next = Array(7).fill("0");
     for (const row of ctx.availability) next[row.weekday] = String(Number(row.hours));
     setHours(next);
