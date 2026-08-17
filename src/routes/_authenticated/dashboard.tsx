@@ -102,8 +102,8 @@ function DashboardPage() {
                 <AreaChart data={data.daily} margin={{ left: -20, right: 8, top: 8 }}>
                   <defs>
                     <linearGradient id="realizado" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.5} />
+                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
@@ -111,8 +111,8 @@ function DashboardPage() {
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip
                     contentStyle={{
-                      background: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
+                      background: "var(--popover)",
+                      border: "1px solid var(--border)",
                       borderRadius: 8,
                       fontSize: 12,
                     }}
@@ -120,14 +120,14 @@ function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="planejado"
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke="var(--muted-foreground)"
                     fill="none"
                     strokeDasharray="4 4"
                   />
                   <Area
                     type="monotone"
                     dataKey="realizado"
-                    stroke="hsl(var(--primary))"
+                    stroke="var(--primary)"
                     fill="url(#realizado)"
                   />
                 </AreaChart>
@@ -153,13 +153,13 @@ function DashboardPage() {
                       <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} />
                       <Tooltip
                         contentStyle={{
-                          background: "hsl(var(--popover))",
-                          border: "1px solid hsl(var(--border))",
+                          background: "var(--popover)",
+                          border: "1px solid var(--border)",
                           borderRadius: 8,
                           fontSize: 12,
                         }}
                       />
-                      <Bar dataKey="minutes" name="minutos" fill="hsl(var(--primary))" radius={4} />
+                      <Bar dataKey="minutes" name="minutos" fill="var(--primary)" radius={4} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
