@@ -476,3 +476,122 @@ export async function deleteTopic(id: string) {
   const { error } = await supabase.from("topics").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ============ Dashboard ============
+
+export type DashboardData = {
+  range: { from: string; to: string };
+  totals: {
+    plannedMinutes: number;
+    doneMinutes: number;
+    completed: number;
+    skipped: number;
+    pending: number;
+    adherence: number;
+    streak: number;
+  };
+  daily: { date: string; label: string; planejado: number; realizado: number }[];
+  bySubject: { name: string; minutes: number; mastery: number | null }[];
+  exams: { id: string; name: string; date: string | null; daysLeft: number | null }[];
+};
+
+export async function getDashboardData(days = 30): Promise<DashboardData> {
+  const today = isoDate(new Date());
+  const from = addDays(today, -(days - 1));
+  const [activities, subjectsRes, topicsRes, examsRes] = await Promise.all([
+    getActivities(from, today),
+    supabase.from("subjects").select("*"),
+    supabase.from("topics").select("*"),
+    supabase.from("target_exams").select("*").order("exam_date", { ascending: true }),
+  ]);
+
+  const subjects = new Map((subjectsRes.data ?? []).map((s) => [s.id, s.name]));
+  const masteryBySubject = new Map<string, number[]>();
+  for (const t of topicsRes.data ?? []) {
+    if (!t.subject_id || t.mastery == null) continue;
+    const arr = masteryBySubject.get(t.subject_id) ?? [];
+    arr.push(Number(t.mastery));
+    masteryBySubject.set(t.subject_id, arr);
+  }
+
+  let plannedMinutes = 0;
+  let doneMinutes = 0;
+  let completed = 0;
+  let skipped = 0;
+  let pending = 0;
+  const perDay = new Map<string, { planejado: number; realizado: number }>();
+  for (let i = 0; i < days; i++) {
+    perDay.set(addDays(from, i), { planejado: 0, realizado: 0 });
+  }
+  const minutesBySubject = new Map<string, number>();
+
+  for (const a of activities) {
+    plannedMinutes += a.planned_minutes;
+    const bucket = perDay.get(a.date);
+    if (bucket) bucket.planejado += a.planned_minutes;
+    if (a.status === "concluida") {
+      const real = a.actual_minutes ?? a.planned_minutes;
+      doneMinutes += real;
+      completed += 1;
+      if (bucket) bucket.realizado += real;
+      if (a.subject_id) {
+        minutesBySubject.set(a.subject_id, (minutesBySubject.get(a.subject_id) ?? 0) + real);
+      }
+    } else if (a.status === "pulada") skipped += 1;
+    else pending += 1;
+  }
+
+  // sequência de dias consecutivos (até hoje) com pelo menos uma conclusão
+  const doneDates = new Set(
+    activities.filter((a) => a.status === "concluida").map((a) => a.date),
+  );
+  let streak = 0;
+  for (let i = 0; i < days; i++) {
+    const d = addDays(today, -i);
+    if (doneDates.has(d)) streak += 1;
+    else if (i > 0 || !doneDates.has(today)) break;
+  }
+
+  const daily = [...perDay.entries()].map(([date, v]) => ({
+    date,
+    label: date.slice(8, 10) + "/" + date.slice(5, 7),
+    planejado: Math.round(v.planejado),
+    realizado: Math.round(v.realizado),
+  }));
+
+  const bySubject = [...minutesBySubject.entries()]
+    .map(([id, minutes]) => {
+      const list = masteryBySubject.get(id) ?? [];
+      return {
+        name: subjects.get(id) ?? "Sem disciplina",
+        minutes,
+        mastery: list.length ? Math.round(list.reduce((a, b) => a + b, 0) / list.length) : null,
+      };
+    })
+    .sort((a, b) => b.minutes - a.minutes);
+
+  const exams = (examsRes.data ?? []).map((e) => ({
+    id: e.id,
+    name: e.name,
+    date: e.exam_date,
+    daysLeft: e.exam_date
+      ? Math.ceil((new Date(`${e.exam_date}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()) / 86400000)
+      : null,
+  }));
+
+  return {
+    range: { from, to: today },
+    totals: {
+      plannedMinutes,
+      doneMinutes,
+      completed,
+      skipped,
+      pending,
+      adherence: plannedMinutes ? Math.round((doneMinutes / plannedMinutes) * 100) : 0,
+      streak,
+    },
+    daily,
+    bySubject,
+    exams,
+  };
+}
