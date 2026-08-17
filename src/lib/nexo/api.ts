@@ -537,7 +537,7 @@ export async function getDashboardData(days = 30): Promise<DashboardData> {
       if (a.subject_id) {
         minutesBySubject.set(a.subject_id, (minutesBySubject.get(a.subject_id) ?? 0) + real);
       }
-    } else if (a.status === "pulada") skipped += 1;
+    } else if (a.status === "adiada") skipped += 1;
     else pending += 1;
   }
 
