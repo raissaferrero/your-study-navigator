@@ -131,6 +131,133 @@ export type Database = {
         }
         Relationships: []
       }
+      question_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          is_correct: boolean
+          question_id: string
+          seconds: number | null
+          selected_index: number
+          topic_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_correct: boolean
+          question_id: string
+          seconds?: number | null
+          selected_index: number
+          topic_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          seconds?: number | null
+          selected_index?: number
+          topic_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_attempts_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_attempts_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questions: {
+        Row: {
+          area: string
+          correct_index: number
+          created_at: string
+          difficulty: number
+          exam_id: string | null
+          explanation: string | null
+          id: string
+          institution: string | null
+          options: Json
+          source: string | null
+          statement: string
+          subject_id: string | null
+          topic_id: string | null
+          updated_at: string
+          user_id: string
+          year: number | null
+        }
+        Insert: {
+          area?: string
+          correct_index?: number
+          created_at?: string
+          difficulty?: number
+          exam_id?: string | null
+          explanation?: string | null
+          id?: string
+          institution?: string | null
+          options?: Json
+          source?: string | null
+          statement: string
+          subject_id?: string | null
+          topic_id?: string | null
+          updated_at?: string
+          user_id: string
+          year?: number | null
+        }
+        Update: {
+          area?: string
+          correct_index?: number
+          created_at?: string
+          difficulty?: number
+          exam_id?: string | null
+          explanation?: string | null
+          id?: string
+          institution?: string | null
+          options?: Json
+          source?: string | null
+          statement?: string
+          subject_id?: string | null
+          topic_id?: string | null
+          updated_at?: string
+          user_id?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "target_exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_activities: {
         Row: {
           actual_minutes: number | null
