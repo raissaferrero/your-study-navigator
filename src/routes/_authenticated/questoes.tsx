@@ -515,9 +515,18 @@ function Cadastrar({ subjects, topics, exams, onSaved }: Ctx & { onSaved: () => 
 
   async function save() {
     const filled = options.map((o) => o.trim()).filter(Boolean);
-    if (!statement.trim()) return toast.error("Escreva o enunciado.");
-    if (filled.length < 2) return toast.error("Informe ao menos 2 alternativas.");
-    if (correct >= filled.length) return toast.error("Marque uma alternativa correta válida.");
+    if (!statement.trim()) {
+      toast.error("Escreva o enunciado.");
+      return;
+    }
+    if (filled.length < 2) {
+      toast.error("Informe ao menos 2 alternativas.");
+      return;
+    }
+    if (correct >= filled.length) {
+      toast.error("Marque uma alternativa correta válida.");
+      return;
+    }
     setBusy(true);
     try {
       await addQuestion({
