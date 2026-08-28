@@ -10,6 +10,7 @@ import {
   Clock,
   Info,
   ChevronDown,
+  PenSquare,
 } from "lucide-react";
 import {
   completeActivity,
@@ -72,6 +73,7 @@ function MeuDia() {
   const [hoursToday, setHoursToday] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [sessionActivity, setSessionActivity] = useState<Activity | null>(null);
 
   const { data: activities = [], isLoading } = useQuery({
     queryKey: ["activities", today],
@@ -96,6 +98,22 @@ function MeuDia() {
           86400000,
       )
     : null;
+
+  const questionActivities = activities.filter((a) => a.type === "questoes");
+  const sessionTopicIds = Array.from(
+    new Set(
+      [sessionActivity, ...questionActivities]
+        .map((a) => a?.topic_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const sessionSubjectIds = Array.from(
+    new Set(
+      [sessionActivity, ...questionActivities]
+        .map((a) => a?.subject_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
 
   async function run(id: string, fn: () => Promise<unknown>, message: string) {
     setBusy(id);
@@ -241,6 +259,11 @@ function MeuDia() {
                 <Check className="mr-2 h-4 w-4" /> Concluir
               </Button>
             )}
+            {current.type === "questoes" && (
+              <Button variant="secondary" onClick={() => setSessionActivity(current)}>
+                <PenSquare className="mr-2 h-4 w-4" /> Fazer questões
+              </Button>
+            )}
             <Button
               variant="ghost"
               onClick={() => run(current.id, () => skipActivity(current.id), "Atividade adiada.")}
@@ -275,6 +298,7 @@ function MeuDia() {
                   run(activity.id, () => completeActivity(activity.id), "Atividade concluída.")
                 }
                 onSkip={() => run(activity.id, () => skipActivity(activity.id), "Atividade adiada.")}
+                onStartSession={() => setSessionActivity(activity)}
               />
             ))}
           </ol>
@@ -282,6 +306,22 @@ function MeuDia() {
       </section>
 
       <AgendaProximosDias today={today} />
+
+      <SessaoQuestoes
+        open={sessionActivity !== null}
+        onOpenChange={(open) => !open && setSessionActivity(null)}
+        title={sessionActivity?.title ?? "Sessão de questões"}
+        topicIds={sessionTopicIds}
+        subjectIds={sessionSubjectIds}
+        onFinished={({ total, correct }) => {
+          const activity = sessionActivity;
+          if (!activity) return;
+          toast.success(`${correct} de ${total} corretas — registrado.`);
+          if (activity.status !== "concluida") {
+            void run(activity.id, () => completeActivity(activity.id), "Atividade concluída.");
+          }
+        }}
+      />
     </div>
   );
 }
@@ -294,6 +334,7 @@ function ActivityRow({
   onStart,
   onComplete,
   onSkip,
+  onStartSession,
 }: {
   activity: Activity;
   busy: boolean;
@@ -302,6 +343,7 @@ function ActivityRow({
   onStart: () => void;
   onComplete: () => void;
   onSkip: () => void;
+  onStartSession: () => void;
 }) {
   const doneState = activity.status === "concluida";
   const skipped = activity.status === "adiada";
@@ -344,6 +386,17 @@ function ActivityRow({
           )}
         </div>
         <div className="flex shrink-0 gap-1">
+          {activity.type === "questoes" && activity.status !== "concluida" && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onStartSession}
+              disabled={busy}
+              aria-label="Fazer questões"
+            >
+              <PenSquare className="h-4 w-4" />
+            </Button>
+          )}
           {activity.status === "pendente" && (
             <Button size="icon" variant="ghost" onClick={onStart} disabled={busy} aria-label="Iniciar">
               <Play className="h-4 w-4" />
