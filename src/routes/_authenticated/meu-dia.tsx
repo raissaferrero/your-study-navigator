@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { AgendaProximosDias } from "@/components/nexo/agenda-proximos-dias";
+import { SessaoQuestoes } from "@/components/nexo/sessao-questoes";
 
 export const Route = createFileRoute("/_authenticated/meu-dia")({
   head: () => ({
